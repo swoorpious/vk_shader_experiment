@@ -3,6 +3,8 @@
 #ifndef VK_SHADER_EXP_ENGINE_H
 #define VK_SHADER_EXP_ENGINE_H
 
+#include <util/viewport.h>
+
 struct SDL_Window;
 struct VkInstance_T;
 typedef struct VkInstance_T* VkInstance;
@@ -20,11 +22,12 @@ private:
     SDL_Window* window = nullptr;
     VkInstance instance = nullptr;
     VkSurfaceKHR surface = nullptr;
+    
+    Viewport viewport; // engine's viewport instance
 
     void initSDL();
     void initWindow();
     void initVulkan();
 };
-
 
 #endif //VK_SHADER_EXP_ENGINE_H

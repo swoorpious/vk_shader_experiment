@@ -1,15 +1,14 @@
 // copyright 2025 swaroop.
 
-#include "../include/Engine.h"
+#include <engine.h>
 
-#include <iostream>
+#include <cstdio>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 #include <vulkan/vulkan.h>
 
 #include <vector>
 #include <stdexcept>
-
 
 Engine::Engine() {
     initSDL();
@@ -28,19 +27,29 @@ Engine::~Engine() {
         SDL_DestroyWindow(window);
     }
     SDL_Quit();
-    std::cout << "shutdown complete\n";
+    printf("shutdown complete\n");
 }
 
 void Engine::run() {
-    std::cout << "app running\n";
+    printf("app running\n");
     bool running = true;
+    
     while (running) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) {
                 running = false;
             }
+            
+            if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED || 
+                event.type == SDL_EVENT_WINDOW_RESIZED) {
+                viewport.onResize();
+            }
         }
+
+        // Render loop would use:
+        // VkViewport vp = viewport.toVkViewport(true);
+        // vkCmdSetViewport(cmd, 0, 1, &vp);
     }
 }
 
@@ -48,38 +57,28 @@ void Engine::initSDL()  {
     SDL_SetLogPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO);
 
     if (!SDL_Init(SDL_INIT_VIDEO)) {
-        // Detailed diagnostic if init fails
         const char* err = SDL_GetError();
-        std::cerr << "SDL_Init failed: " << (err ? err : "unknown error") << "\n";
-            
-        int numDrivers = SDL_GetNumVideoDrivers();
-        std::cerr << "available video drivers: " << numDrivers << "\n";
-        for(int i=0; i < numDrivers; i++) {
-            std::cerr << " - " << SDL_GetVideoDriver(i) << "\n";
-        }
-            
-        if (numDrivers == 0) {
-            std::cerr << "CRITICAL: SDL was built without any video backends. \n"
-                      << "if on Linux, install X11/Wayland dev headers before running CMake.\n";
-        }
+        fprintf(stderr, "SDL_Init failed: %s\n", (err ? err : "unknown error"));
         throw std::runtime_error("failed to initialize SDL Video");
     }
 }
 
 void Engine::initWindow() {
-    {
-        window = SDL_CreateWindow(
-            "sdl+vulkan Engine test",
-            800, 600,
-            SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE
-        );
+    window = SDL_CreateWindow(
+        "sdl+vulkan Engine test",
+        800, 600,
+        SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY
+    );
 
-        // TODO: use and implement viewport.h
-        
-        if (!window) {
-            throw std::runtime_error(std::string("failed to create window: ") + SDL_GetError());
-        }
+    if (!window) {
+        throw std::runtime_error(std::string("failed to create window: ") + SDL_GetError());
     }
+
+    viewport.init(window);
+    
+    printf("[viewport] initialized; logical: %fx%f pixel: %fx%f\n", 
+           viewport.getLogicalSize().x, viewport.getLogicalSize().y,
+           viewport.getPixelSize().x, viewport.getPixelSize().y);
 }
 
 void Engine::initVulkan() {

@@ -42,8 +42,16 @@ namespace MathCore {
             y -= other.y;
         }
 
+        Vector2(T _x, T _y) {
+            x = static_cast<T>(_x);
+            y = static_cast<T>(_y);
+        }
+
         Vector2() {
-            x = y = static_cast<T>(0.0f);
+            Vector2(
+                static_cast<T>(0.0f),
+                static_cast<T>(0.0f)
+                );
         }
     };
 
@@ -88,8 +96,18 @@ namespace MathCore {
             z -= other.z;
         }
 
+        Vector3(T _x, T _y, T _z) {
+            x = static_cast<T>(_x);
+            y = static_cast<T>(_y);
+            z = static_cast<T>(_z);
+        }
+
         Vector3() {
-            x = y = z = static_cast<T>(0.0f);
+            Vector3(
+                static_cast<T>(0.0f),
+                static_cast<T>(0.0f),
+                static_cast<T>(0.0f)
+                );
         }
     };
 
@@ -138,8 +156,20 @@ namespace MathCore {
             w -= other.w;
         }
 
+        Vector4(T _x, T _y, T _z, T _w) {
+            x = static_cast<T>(_x);
+            y = static_cast<T>(_y);
+            z = static_cast<T>(_z);
+            w = static_cast<T>(_w);
+        }
+
         Vector4() {
-            x = y = z = w = static_cast<T>(0.0f);
+            Vector4(
+                static_cast<T>(0.0f),
+                static_cast<T>(0.0f),
+                static_cast<T>(0.0f),
+                static_cast<T>(0.0f)
+                );
         }
     };
 }
