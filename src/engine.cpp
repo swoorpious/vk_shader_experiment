@@ -70,8 +70,8 @@ void Engine::run() {
 
     bool running = true;
     while (running) {
-        uint64_t now = SDL_GetPerformanceCounter();
-        float deltaTime = (float)(now - lastTime) / (float)SDL_GetPerformanceFrequency();
+        const uint64_t now = SDL_GetPerformanceCounter();
+        const float deltaTime = static_cast<float>(now - lastTime) / static_cast<float>(SDL_GetPerformanceFrequency());
         lastTime = now;
 
         SDL_Event event;
@@ -79,9 +79,44 @@ void Engine::run() {
             ImGui_ImplSDL3_ProcessEvent(&event);
             if (event.type == SDL_EVENT_QUIT)
                 running = false;
+            
+            // handle window resize
+            if (event.type == SDL_EVENT_WINDOW_RESIZED || event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
+                if (event.window.windowID == SDL_GetWindowID(window)) {
+                    int w = 0, h = 0;
+                    SDL_GetWindowSize(window, &w, &h);
+                    
+                    // only resize if the window has valid dimensions - not minimized
+                    if (w > 0 && h > 0) {
+                        viewport.onResize();
+                        vkDeviceWaitIdle(device);
+
+                        for (auto fb : framebuffers) 
+                            vkDestroyFramebuffer(device, fb, nullptr);
+                        framebuffers.clear();
+
+                        vkFreeCommandBuffers(device, commandPool, 
+                                           static_cast<uint32_t>(commandBuffers.size()), 
+                                           commandBuffers.data());
+                        commandBuffers.clear();
+
+                        if (swapchain) {
+                            vkDestroySwapchainKHR(device, swapchain, nullptr);
+                            swapchain = VK_NULL_HANDLE;
+                        }
+
+                        createSwapchain();
+                        createFramebuffers();
+                        createCommandBuffers();
+                    }
+                }
+            }
         }
 
-
+        if (swapchainExtent.width == 0 || swapchainExtent.height == 0) {
+            SDL_Delay(100); 
+            continue;
+        }
 
         // setup/render imgui
         ImGui_ImplVulkan_NewFrame();
@@ -144,11 +179,18 @@ void Engine::run() {
         uint32_t imageIndex = static_cast<uint32_t>(currentFrame);
         pi.pImageIndices = &imageIndex;
 
-        vkQueuePresentKHR(graphicsQueue, &pi);
+        VkResult presentResult = vkQueuePresentKHR(graphicsQueue, &pi);
+        
+        // handle swapchain invalidation during present - some drivers might signal it here
+        if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR) {
+            // usually handled within the event loop
+            // currently we rely on the SDL event to trigger the recreation logic above
+        }
 
         currentFrame = (currentFrame + 1) % framebuffers.size();
     }
 }
+
 
 void Engine::initImGui() {
     IMGUI_CHECKVERSION();
@@ -186,8 +228,12 @@ void Engine::initSDL() {
 }
 
 void Engine::initWindow() {
-    window = SDL_CreateWindow("engine", 800, 600, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+    Math::Vector2f size = viewport.getSize();
+    Math::Vector2f min_size = viewport.getMinSize();
+    window = SDL_CreateWindow("engine", size.x, size.y, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
     if (!window) throw std::runtime_error("window creation failed");
+
+    SDL_SetWindowMinimumSize(window, min_size.x, min_size.y);
     viewport.init(window);
 }
 
@@ -256,7 +302,7 @@ void Engine::initVulkan() {
 
 void Engine::createImGuiPool() {
     VkDescriptorPoolSize poolSizes[] = {
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }, // Font texture
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }, // font texture
     };
     VkDescriptorPoolCreateInfo pi{};
     pi.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;

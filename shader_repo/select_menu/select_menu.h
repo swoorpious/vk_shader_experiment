@@ -19,7 +19,7 @@ public:
     void render() override;
 
 private:
-    float time_elapsed;
+    // time_elapsed moved to SelectMenuLayer
     unordered_map<string, function<unique_ptr<EngineObject>()>> repo_map;
     
     template<typename T>

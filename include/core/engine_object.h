@@ -17,6 +17,10 @@ public:
 
     virtual void onSetup() {} 
 
+    /*
+     * push layers to the render stack
+     * push the debug/dev ui layer in the end so that it renders at the top of the queue 
+     */
     virtual void pushLayer(LayerComponent* layer);
     virtual void popLayer(LayerComponent* layer);
 

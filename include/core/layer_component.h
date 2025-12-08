@@ -19,6 +19,10 @@ public:
     virtual void onRender() {}
 
     void setEngine(Engine* engineRef);
+    
+    // Getters for accessing the engine/parent from outside or derived classes
+    Engine* getEngine() const;
+    EngineObject* getParent() const;
     const std::string& getName() const;
 
 protected:

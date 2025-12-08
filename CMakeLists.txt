@@ -97,7 +97,7 @@ add_executable(vk_shader_engine
         include/util/math.h
         src/core/engine_object.cpp
         include/core/engine_object.h
-        include/core/layer_component.cpp
+        src/core/layer_component.cpp
         include/core/layer_component.h
 )
 target_link_libraries(vk_shader_engine

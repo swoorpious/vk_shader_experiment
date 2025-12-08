@@ -17,12 +17,13 @@ void Viewport::onResize() {
 }
 
 void Viewport::updateFromWindow() {
-    if (!window) return;
-
     int w, h;
     int pixelW, pixelH;
 
     SDL_GetWindowSize(window, &w, &h);
+
+    printf("[viewport] x: %f, y: %f\n", w, h);
+    
     logicalSize = { static_cast<float>(w), static_cast<float>(h) };
     
     SDL_GetWindowSizeInPixels(window, &pixelW, &pixelH);
@@ -70,6 +71,7 @@ VkRect2D Viewport::toScissor() const {
 }
 
 Math::Vector2f Viewport::getSize() const { return size; }
+Math::Vector2f Viewport::getMinSize() const { return minSize; }
 Math::Vector2f Viewport::getPosition() const { return position; }
 Math::Vector2f Viewport::getDepthRange() const { return depthRange; }
 Math::Vector2f Viewport::getPixelSize() const { return pixelSize; }
